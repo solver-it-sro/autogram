@@ -1,6 +1,5 @@
 package digital.slovensko.autogram.ui.gui;
 
-import digital.slovensko.autogram.core.Autogram;
 import digital.slovensko.autogram.core.errors.*;
 import digital.slovensko.autogram.ui.UI;
 import digital.slovensko.autogram.core.*;
@@ -17,12 +16,14 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 public class GUI implements UI {
     private final Map<SigningJob, SigningDialogController> jobControllers = new WeakHashMap<>();
     private SigningKey activeKey;
     private final HostServices hostServices;
+    private BatchDialogController batchController;
 
     public GUI(HostServices hostServices) {
         this.hostServices = hostServices;
@@ -47,6 +48,36 @@ public class GUI implements UI {
     }
 
     @Override
+    public void startBatch(Batch batch, Autogram autogram, AutogramBatchStartCallback callback) {
+        batchController = new BatchDialogController(batch, callback, autogram, this);
+        var root = GUIUtils.loadFXML(batchController, "batch-dialog.fxml");
+
+        var stage = new Stage();
+        stage.setTitle("Hromadné podpisovanie");
+        stage.setScene(new Scene(root));
+        stage.setOnCloseRequest(e -> cancelBatch(batch, callback));
+
+        stage.sizeToScene();
+        GUIUtils.suppressDefaultFocus(stage, batchController);
+        GUIUtils.showOnTop(stage);
+        GUIUtils.setUserFriendlyPosition(stage);
+    }
+
+    @Override
+    public void cancelBatch(Batch batch, AutogramBatchStartCallback callback) {
+        batchController.close();
+        batch.end();
+        refreshKeyOnAllJobs();
+        onWorkThreadDo(callback);
+    }
+
+    @Override
+    public void signBatch(SigningJob job) {
+        job.signWithKeyAndRespond(getActiveSigningKey());
+        onUIThreadDo(batchController::update);
+    }
+
+    @Override
     public void pickTokenDriverAndThen(List<TokenDriver> drivers, Consumer<TokenDriver> callback) {
         disableKeyPicking();
 
@@ -57,7 +88,8 @@ public class GUI implements UI {
             // short-circuit if only one driver present
             callback.accept(drivers.get(0));
         } else {
-            PickDriverDialogController controller = new PickDriverDialogController(drivers, callback);
+            PickDriverDialogController controller =
+                    new PickDriverDialogController(drivers, callback);
             var root = GUIUtils.loadFXML(controller, "pick-driver-dialog.fxml");
 
             var stage = new Stage();
@@ -92,7 +124,8 @@ public class GUI implements UI {
     }
 
     @Override
-    public void pickKeyAndThen(List<DSSPrivateKeyEntry> keys, Consumer<DSSPrivateKeyEntry> callback) {
+    public void pickKeyAndThen(List<DSSPrivateKeyEntry> keys,
+            Consumer<DSSPrivateKeyEntry> callback) {
         if (keys.isEmpty()) {
             showError(new NoKeysDetectedException());
             refreshKeyOnAllJobs();
@@ -196,7 +229,7 @@ public class GUI implements UI {
     @Override
     public void onSigningFailed(AutogramException e) {
         showError(e);
-        if(e instanceof TokenRemovedException) {
+        if (e instanceof TokenRemovedException) {
             resetSigningKey();
         } else {
             refreshKeyOnAllJobs();
@@ -231,7 +264,8 @@ public class GUI implements UI {
     }
 
     public void setActiveSigningKey(SigningKey newKey) {
-        if (activeKey != null) activeKey.close();
+        if (activeKey != null)
+            activeKey.close();
         activeKey = newKey;
         refreshKeyOnAllJobs();
     }
