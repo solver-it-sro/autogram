@@ -32,7 +32,7 @@ import java.util.Base64;
 public class SigningJob {
     private final Responder responder;
     private final CommonDocument document;
-    private final SigningParameters parameters;
+    private SigningParameters parameters;
 
     public SigningJob(CommonDocument document, SigningParameters parameters, Responder responder) {
         this.document = document;
@@ -46,6 +46,10 @@ public class SigningJob {
 
     public SigningParameters getParameters() {
         return parameters;
+    }
+
+    public void setParameters(SigningParameters parameters) {
+        this.parameters = parameters;
     }
 
     public boolean isPlainText() {

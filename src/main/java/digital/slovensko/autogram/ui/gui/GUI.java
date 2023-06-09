@@ -16,7 +16,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 public class GUI implements UI {
@@ -159,7 +158,7 @@ public class GUI implements UI {
         stage.setScene(new Scene(root));
 
         stage.sizeToScene();
-        stage.setResizable(false);
+        stage.setResizable(true);
         stage.initModality(Modality.APPLICATION_MODAL);
 
         GUIUtils.suppressDefaultFocus(stage, controller);

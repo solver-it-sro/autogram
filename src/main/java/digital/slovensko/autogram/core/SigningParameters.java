@@ -2,7 +2,6 @@ package digital.slovensko.autogram.core;
 
 import java.io.IOException;
 import java.io.StringReader;
-
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -15,6 +14,7 @@ import eu.europa.esig.dss.asic.cades.ASiCWithCAdESSignatureParameters;
 import eu.europa.esig.dss.asic.xades.ASiCWithXAdESSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 
 public class SigningParameters {
@@ -31,15 +31,16 @@ public class SigningParameters {
     private final String keyInfoCanonicalization;
     private final String identifier;
     private final boolean checkPDFACompliance;
-    private final int visualizationWidth;
+    private final int visualizationWidth; // TODO toto by som asi premenoval na
+                                          // preferredPreviewWidth
+    private final SignatureImageParameters signatureImageParameters;
 
     public SigningParameters(SignatureLevel level, ASiCContainerType container,
-                             String containerXmlns, SignaturePackaging packaging,
-                             DigestAlgorithm digestAlgorithm,
-                             Boolean en319132, String infoCanonicalization,
-                             String propertiesCanonicalization, String keyInfoCanonicalization,
-                             String schema, String transformation,
-                             String identifier, boolean checkPDFACompliance, int preferredPreviewWidth) {
+            String containerXmlns, SignaturePackaging packaging, DigestAlgorithm digestAlgorithm,
+            Boolean en319132, String infoCanonicalization, String propertiesCanonicalization,
+            String keyInfoCanonicalization, String schema, String transformation, String identifier,
+            boolean checkPDFACompliance, int preferredPreviewWidth,
+            SignatureImageParameters signatureImageParameters) {
         this.level = level;
         this.asicContainer = container;
         this.containerXmlns = containerXmlns;
@@ -54,6 +55,15 @@ public class SigningParameters {
         this.identifier = identifier;
         this.checkPDFACompliance = checkPDFACompliance;
         this.visualizationWidth = preferredPreviewWidth;
+        this.signatureImageParameters = signatureImageParameters;
+    }
+
+    public SigningParameters withSignatureImageParameters(
+            SignatureImageParameters signatureImageParameters) {
+        return new SigningParameters(level, asicContainer, containerXmlns, packaging,
+                digestAlgorithm, en319132, infoCanonicalization, propertiesCanonicalization,
+                keyInfoCanonicalization, schema, transformation, identifier, checkPDFACompliance,
+                visualizationWidth, signatureImageParameters);
     }
 
     public MimeType getTransformationOutputMimeType() {
@@ -63,10 +73,13 @@ public class SigningParameters {
         try {
             var builderFactory = DocumentBuilderFactory.newInstance();
             builderFactory.setNamespaceAware(true);
-            var document = builderFactory.newDocumentBuilder().parse(new InputSource(new StringReader(transformation)));
+            var document = builderFactory.newDocumentBuilder()
+                    .parse(new InputSource(new StringReader(transformation)));
             var elem = document.getDocumentElement();
-            var outputElements = elem.getElementsByTagNameNS("http://www.w3.org/1999/XSL/Transform", "output");
-            var method = outputElements.item(0).getAttributes().getNamedItem("method").getNodeValue();
+            var outputElements =
+                    elem.getElementsByTagNameNS("http://www.w3.org/1999/XSL/Transform", "output");
+            var method =
+                    outputElements.item(0).getAttributes().getNamedItem("method").getNodeValue();
 
             if (method.equals("html"))
                 return MimeTypeEnum.HTML;
@@ -74,7 +87,7 @@ public class SigningParameters {
             if (method.equals("text"))
                 return MimeTypeEnum.TEXT;
 
-                throw new RuntimeException("Unsupported transformation output method: " + method);
+            throw new RuntimeException("Unsupported transformation output method: " + method);
 
         } catch (IOException | ParserConfigurationException e) {
             // TODO Auto-generated catch block
@@ -122,7 +135,8 @@ public class SigningParameters {
 
         parameters.setSignatureLevel(level);
         parameters.setDigestAlgorithm(getDigestAlgorithm());
-        parameters.setSignaturePackaging(SignaturePackaging.ENVELOPING);    // TODO: seems to be the only supported value
+        parameters.setSignaturePackaging(SignaturePackaging.ENVELOPING); // TODO: seems to be the
+                                                                         // only supported value
 
         return parameters;
     }
@@ -133,6 +147,7 @@ public class SigningParameters {
         parameters.setSignatureLevel(level);
         parameters.setDigestAlgorithm(getDigestAlgorithm());
         parameters.setEn319122(isEn319132());
+        parameters.setImageParameters(signatureImageParameters);
 
         return parameters;
     }
@@ -185,37 +200,29 @@ public class SigningParameters {
     }
 
     public String getInfoCanonicalization() {
-        return infoCanonicalization != null ? infoCanonicalization : CanonicalizationMethod.INCLUSIVE;
+        return infoCanonicalization != null ? infoCanonicalization
+                : CanonicalizationMethod.INCLUSIVE;
     }
 
     public String getPropertiesCanonicalization() {
-        return propertiesCanonicalization != null ? propertiesCanonicalization : CanonicalizationMethod.INCLUSIVE;
+        return propertiesCanonicalization != null ? propertiesCanonicalization
+                : CanonicalizationMethod.INCLUSIVE;
     }
 
     public String getKeyInfoCanonicalization() {
-        return keyInfoCanonicalization != null ? keyInfoCanonicalization : CanonicalizationMethod.INCLUSIVE;
+        return keyInfoCanonicalization != null ? keyInfoCanonicalization
+                : CanonicalizationMethod.INCLUSIVE;
     }
 
     public static SigningParameters buildForPDF(String filename) {
-        return new SigningParameters(
-                SignatureLevel.PAdES_BASELINE_B,
-                null,
-                null, null,
-                DigestAlgorithm.SHA256,
-                false, null,
-                null, null,
-                null, null, "", false, 600);
+        return new SigningParameters(SignatureLevel.PAdES_BASELINE_B, null, null, null,
+                DigestAlgorithm.SHA256, false, null, null, null, null, null, "", false, 600, null);
     }
 
     public static SigningParameters buildForASiCWithXAdES(String filename) {
-        return new SigningParameters(
-                SignatureLevel.XAdES_BASELINE_B,
-                ASiCContainerType.ASiC_E,
-                null,
-                SignaturePackaging.ENVELOPING,
-                DigestAlgorithm.SHA256,
-                false, null,
-                null, null, null, null, "", false, 600);
+        return new SigningParameters(SignatureLevel.XAdES_BASELINE_B, ASiCContainerType.ASiC_E,
+                null, SignaturePackaging.ENVELOPING, DigestAlgorithm.SHA256, false, null, null,
+                null, null, null, "", false, 600, null);
     }
 
     public String getIdentifier() {
