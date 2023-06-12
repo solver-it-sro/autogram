@@ -4,6 +4,12 @@
 
 create empty file `fakeTokenDriver` in cwd - so in project root when developing, to enable "Fake token driver"
 
+
+# More info about Digital Signature Service
+
+https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html
+
+
 # More info about inner workings of builds for MacOS
 
 To run signed mac build add follwing to `.vscode/settings.json` (or you can do unsigned build by setting `mac.sign=0` in `build.properties`)
