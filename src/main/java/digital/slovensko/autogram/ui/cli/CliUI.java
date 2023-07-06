@@ -172,6 +172,8 @@ public class CliUI implements UI {
         String errMessage = "";
         if (e instanceof FunctionCanceledException) {
             errMessage = "No security code entered";
+        } else if (e instanceof CKRFunctionFailedException){
+            errMessage = "Uknown communication error with card occurred";
         } else if (e instanceof InitializationFailedException) {
             errMessage = "Unable to read card";
         } else if (e instanceof NoDriversDetectedException) {
