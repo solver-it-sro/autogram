@@ -1,5 +1,6 @@
 package digital.slovensko.autogram.core.eforms;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -27,7 +28,7 @@ public class EFormResources {
     private final String xsdDigest;
     private final String xsltDigest;
 
-    public static EFormAttributes tryToLoadEFormAttributes(DSSDocument document, String propertiesCanonicalization) throws AutogramException {
+    public static EFormAttributes tryToLoadEFormAttributes(DSSDocument document, String propertiesCanonicalization) throws AutogramException, IOException {
         if (!isXDC(document.getMimeType()) && !isXML(document.getMimeType()))
             return null;
 
@@ -97,7 +98,7 @@ public class EFormResources {
         return "http://data.gov.sk/doc/eform/" + url;
     }
 
-    private String getTransformation() throws XMLValidationException {
+    private String getTransformation() throws XMLValidationException, IOException {
         var manifest_xml = getResource(url + "/META-INF/manifest.xml");
         if (manifest_xml == null)
             return null;
@@ -137,7 +138,7 @@ public class EFormResources {
         return new String(xsltString, ENCODING);
     }
 
-    private String getSchema() throws XMLValidationException {
+    private String getSchema() throws XMLValidationException, IOException {
         var xsdString = getResource(url + "/schema.xsd");
         if (xsdString == null)
             return null;

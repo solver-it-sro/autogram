@@ -121,7 +121,7 @@ public abstract class EFormUtils {
         return xmlns.getNodeValue();
     }
 
-    public static byte[] getResource(String url) {
+    public static byte[] getResource(String url) throws IOException {
         var offlineFileLoader = new FileCacheDataLoader();
         offlineFileLoader.setCacheExpirationTime(21600000);  // 6 hours
         offlineFileLoader.setDataLoader(new CommonsDataLoader());
@@ -130,6 +130,9 @@ public abstract class EFormUtils {
         try {
             xsltDoc = offlineFileLoader.getDocument(url);
         } catch (DSSException e) {
+            if (e.getMessage().contains("Name or service not known"))
+                throw new IOException(e);
+
             return null;
         }
 

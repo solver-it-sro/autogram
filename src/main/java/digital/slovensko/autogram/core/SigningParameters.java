@@ -5,6 +5,7 @@ import javax.xml.crypto.dsig.CanonicalizationMethod;
 import digital.slovensko.autogram.core.errors.AutogramException;
 import digital.slovensko.autogram.core.errors.SigningParametersException;
 import digital.slovensko.autogram.util.AsicContainerUtils;
+import digital.slovensko.autogram.core.eforms.EFormAttributes;
 import digital.slovensko.autogram.core.eforms.EFormResources;
 import digital.slovensko.autogram.core.eforms.EFormUtils;
 import digital.slovensko.autogram.core.eforms.XDCValidator;
@@ -21,6 +22,8 @@ import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 
 import static digital.slovensko.autogram.core.AutogramMimeType.*;
+
+import java.io.IOException;
 
 public class SigningParameters {
     private final ASiCContainerType asicContainer;
@@ -211,7 +214,12 @@ public class SigningParameters {
             extractedDocument = AsicContainerUtils.getOriginalDocument(document);
 
         if (autoLoadEform && (isAsice(mimeType) || isXML(mimeType) || isXDC(mimeType))) {
-            var eformAttributes = EFormResources.tryToLoadEFormAttributes(extractedDocument, propertiesCanonicalization);
+            EFormAttributes eformAttributes = null;
+            try {
+                eformAttributes = EFormResources.tryToLoadEFormAttributes(extractedDocument, propertiesCanonicalization);
+            } catch (IOException e) {
+                // couldn't connect to the server
+            }
 
             if (eformAttributes != null) {
                 schema = eformAttributes.schema();
