@@ -1,5 +1,6 @@
 package digital.slovensko.autogram.core;
 
+import digital.slovensko.autogram.providers.XProvider;
 import digital.slovensko.autogram.ui.cli.CliApp;
 import digital.slovensko.autogram.ui.gui.GUIApp;
 import javafx.application.Application;
@@ -27,6 +28,8 @@ public class AppStarter {
         addOption(null, "en319132", false, "Sign according to EN 319 132 or EN 319 122.");
 
     public static void start(String[] args) {
+        java.security.Security.addProvider(new XProvider("XProvider", "0.0.1", "info"));
+
         try {
             CommandLine cmd = new DefaultParser().parse(options, args);
 
