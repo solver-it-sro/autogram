@@ -73,7 +73,7 @@ public class XSignatureToken extends AbstractKeyStoreTokenConnection {
                     var tokenInfo = session.getToken().getTokenInfo();
                     if (tokenInfo.isLoginRequired()) {
                         if (!tokenInfo.isProtectedAuthenticationPath()) { // TODO actually ask this driver to allow per driver overrides
-                            session.login(CKU_USER, null);
+                            session.login(CKU_USER, passwordProtection.getPassword());
                         } else {
                             session.login(CKU_USER, passwordProtection.getPassword());
                         }
@@ -81,6 +81,7 @@ public class XSignatureToken extends AbstractKeyStoreTokenConnection {
                     wasLoggedIn = true;
                 }
 
+                session.findObjectsInit(null);
                 var objectIds = session.findObjects(Integer.MAX_VALUE);
 
                 for (var objectId : objectIds) {
@@ -103,6 +104,8 @@ public class XSignatureToken extends AbstractKeyStoreTokenConnection {
                         var pk = new XPrivateKey(session, objectId, attrs);
 
                         entryDataById.get(cka_id)[1] = pk;
+                    } else if (cka_class == CKO_PUBLIC_KEY) {
+                        // nothing
                     } else {
                         throw new IllegalStateException("Unexpected value: " + cka_class);
                     }

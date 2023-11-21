@@ -29,7 +29,7 @@ public class XPrivateKey implements PrivateKey {
 
     @Override
     public String getFormat() {
-        throw new UnsupportedOperationException();
+        return "PKCS#11";
     }
 
     @Override
